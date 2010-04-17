@@ -1,0 +1,6 @@
+= GME: Game Music Emulator for Ruby
+
+This gem allows the use of the gme library (http://code.google.com/p/game-music-emu/)
+by Blargg (http://www.fly.net/~ant/libs/audio.html) in Ruby programs.
+
+At the moment, it implements just the basic functionality, and it's not suitable for production.
