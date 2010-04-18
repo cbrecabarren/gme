@@ -5,3 +5,5 @@ a.out
 *.exe
 *.dll
 pkg/
+ext/gme/Makefile
+ext/gme/mkmf.log
