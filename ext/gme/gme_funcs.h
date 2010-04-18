@@ -4,7 +4,7 @@
 #include <ruby.h>
 #include <gme/gme.h>
 
-VALUE gme_ruby_open(VALUE self, VALUE path, VALUE sample_rate);
+VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self);
 VALUE gme_ruby_close(VALUE self);
 VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self);
 VALUE gme_ruby_get_samples(VALUE self, VALUE samples);

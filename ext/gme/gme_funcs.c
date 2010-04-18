@@ -9,7 +9,7 @@ extern VALUE eInvalidFile;
 
 void gme_ruby_emu_free(void* pointer);
 
-VALUE gme_ruby_open(VALUE self, VALUE path, VALUE sample_rate)
+VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 {
     Music_Emu* emulator;
     int c_sample_rate;
@@ -17,9 +17,17 @@ VALUE gme_ruby_open(VALUE self, VALUE path, VALUE sample_rate)
     int track = 0;
     gme_info_t* info;
 
-    VALUE string = StringValue(path);
+    // use the first (mandatory) argument
+    VALUE string = StringValue(argv[0]);
     c_path = RSTRING_PTR(string);
-    c_sample_rate = FIX2INT(sample_rate);
+
+    // use the second argument, if present
+    if(argc >= 2) {
+        c_sample_rate = FIX2INT(argv[1]);
+    }
+    else {
+        c_sample_rate = 44100;
+    }
 
     handle_error(gme_open_file(c_path, &emulator, c_sample_rate), eInvalidFile);
     handle_error(gme_track_info(emulator, &info, track), eGenericException);

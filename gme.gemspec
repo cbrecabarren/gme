@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Carlos Beltr\303\241n-Recabarren"]
-  s.date = %q{2010-04-17}
+  s.date = %q{2010-04-18}
   s.description = %q{libgme interface for Ruby}
   s.email = %q{cbrecabarren@gmail.com}
   s.extensions = ["ext/gme/extconf.rb", "ext/gme/extconf.rb"]
@@ -21,12 +21,18 @@ Gem::Specification.new do |s|
     "README.rdoc",
      "Rakefile",
      "VERSION",
+     "ext/gme/Makefile",
      "ext/gme/extconf.rb",
      "ext/gme/gme.c",
+     "ext/gme/gme.o",
+     "ext/gme/gme_ext.so",
      "ext/gme/gme_funcs.c",
      "ext/gme/gme_funcs.h",
+     "ext/gme/gme_funcs.o",
+     "ext/gme/mkmf.log",
      "ext/gme/util.c",
      "ext/gme/util.h",
+     "ext/gme/util.o",
      "lib/gme.rb",
      "lib/gme/exceptions.rb",
      "lib/gme/gme.rb"

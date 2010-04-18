@@ -19,7 +19,7 @@ void Init_gme_ext()
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("info")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("track_count")));
     /* rb_define_alloc_func(cEmulator, gme_alloc); */
-    rb_define_singleton_method(cEmulator, "open", gme_ruby_open, 2);
+    rb_define_singleton_method(cEmulator, "open", gme_ruby_open, -1);
     rb_define_method(cEmulator, "close", gme_ruby_close, 0);
     rb_define_method(cEmulator, "start_track", gme_ruby_start_track, -1);
     rb_define_method(cEmulator, "get_samples", gme_ruby_get_samples, 1);
