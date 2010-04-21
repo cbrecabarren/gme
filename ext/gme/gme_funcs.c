@@ -33,8 +33,11 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     c_path = RSTRING_PTR(string);
 
     // use the second argument, if present, as the options hash
-    if(argc >= 2 && (TYPE(options) == T_HASH)){
-        options = argv[1];
+    VALUE temp;
+    if(argc >= 2){
+        temp = rb_check_convert_type(argv[1], T_HASH, "Hash", "to_hash");
+        if(!NIL_P(temp)) options = temp;
+        else options = rb_hash_new();
     }
     else {
         options = rb_hash_new();
@@ -42,12 +45,22 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // set sample rate
     VALUE sample_rate = rb_hash_aref(options, ID2SYM(rb_intern("sample_rate")));
-    if(!NIL_P(sample_rate)){
+    if(!NIL_P(sample_rate)) {
         c_sample_rate = FIX2INT(sample_rate);
     }
     else {
         // default value
         c_sample_rate = 44100;
+    }
+
+    // set buffer length
+    VALUE buffer_len = rb_hash_aref(options, ID2SYM(rb_intern("buffer_length")));
+    if(!NIL_P(buffer_len)) {
+        buffer_length = FIX2INT(buffer_len);
+    }
+    else {
+        // default value
+        buffer_length = 2048;
     }
 
     // opens the specified file
@@ -57,9 +70,6 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // creates a new instance of GME::Emulator, as a wrapper around Music_Emu
     VALUE new_instance = Data_Wrap_Struct(cEmulator, 0, gme_ruby_emu_free, emulator);
-
-    // internal buffer handling
-    buffer_length = 2048; // FIXME: configure through optional parameter, :buffer_length
 
     // allocates memory for the internal buffer
     buffer = ALLOC_N(short, buffer_length);
@@ -142,7 +152,7 @@ VALUE gme_ruby_get_samples(VALUE self)
 
     // recovers a pointer to the internal buffer
     c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
-    c_buffer_len = NUM2LONG(rb_iv_get(self, "@internal_buffer_length"));
+    c_buffer_len = NUM2INT(rb_iv_get(self, "@internal_buffer_length"));
 
     // plays the file, returning the specified number of samples
     handle_error(gme_play(emulator, c_buffer_len, c_buffer), eGenericException);

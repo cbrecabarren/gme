@@ -18,6 +18,12 @@ void Init_gme_ext()
     cEmulator = rb_define_class_under(mGME, "Emulator", rb_cObject);
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("info")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("track_count")));
+
+    // for debugging
+    rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("internal_buffer")));
+    rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("internal_buffer_length")));
+    // ---
+
     /* rb_define_alloc_func(cEmulator, gme_alloc); */
     rb_define_singleton_method(cEmulator, "open", gme_ruby_open, -1);
     rb_define_method(cEmulator, "close", gme_ruby_close, 0);
