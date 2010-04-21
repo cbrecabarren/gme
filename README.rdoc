@@ -1,6 +1,25 @@
 = GME: Game Music Emulator for Ruby
 
-This gem allows the use of the gme library (http://code.google.com/p/game-music-emu/)
+This gem allows the use of the gme library (http://code.google.com/p/game-music-emu)
 by Blargg (http://www.fly.net/~ant/libs/audio.html) in Ruby programs.
 
 At the moment, it implements just the basic functionality, and it's not suitable for production.
+
+== Example usage:
+
+This gem only outputs raw pcm data, and doesn't include options for handling multi track files.
+
+   require 'gme'
+   
+   song = GME::Emulator.open('/path/to/file.ext', options = {}) # opens a music file and sets up an GME::Emulator object
+   # configuration options:
+   # :sample_rate   - specifies the output sample rate
+   # :buffer_length - specifies the internal buffer length to be used
+
+   puts song.info                     # prints the information about the first track
+
+   song.play_to_file(file)            # plays the first track of the song to a file
+
+   song.start_track(track_number)     # starts the specified track (0 by default)
+   song.get_samples                   # gets a number of samples
+   
