@@ -5,10 +5,10 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gme}
-  s.version = "0.0.10"
+  s.version = "0.0.10.p1"
   s.platform = %q{x86-linux}
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Carlos Beltr\303\241n-Recabarren"]
   s.date = %q{2010-04-21}
   s.description = %q{libgme interface for Ruby}

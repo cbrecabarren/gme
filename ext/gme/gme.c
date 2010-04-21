@@ -22,6 +22,6 @@ void Init_gme_ext()
     rb_define_singleton_method(cEmulator, "open", gme_ruby_open, -1);
     rb_define_method(cEmulator, "close", gme_ruby_close, 0);
     rb_define_method(cEmulator, "start_track", gme_ruby_start_track, -1);
-    rb_define_method(cEmulator, "get_samples", gme_ruby_get_samples, 1);
+    rb_define_method(cEmulator, "get_samples", gme_ruby_get_samples, 0);
     rb_define_method(cEmulator, "play_to_file", gme_ruby_play_to_file, 1);
 }

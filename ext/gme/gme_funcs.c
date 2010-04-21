@@ -21,6 +21,10 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     int         track = 0; // uses track 0 for getting info (FIXME)
     gme_info_t* info;
 
+    // internal buffer
+    short* buffer;
+    int    buffer_length;
+
     // use the first (mandatory) argument, as path to file
     VALUE string = StringValue(argv[0]);
     c_path = RSTRING_PTR(string);
@@ -40,6 +44,15 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // creates a new instance of GME::Emulator, as a wrapper around Music_Emu
     VALUE new_instance = Data_Wrap_Struct(cEmulator, 0, gme_ruby_emu_free, emulator);
+
+    // internal buffer handling
+    buffer_length = 2048; // FIXME: configure through optional parameter, :buffer_length
+
+    // allocates memory for the internal buffer
+    buffer = ALLOC_N(short, buffer_length);
+    // and saves a reference for later use (hack?)
+    rb_iv_set(new_instance, "@internal_buffer", LONG2NUM((long)buffer));
+    rb_iv_set(new_instance, "@internal_buffer_length", INT2NUM(buffer_length));
 
     // Fills the info hash
     VALUE info_hash = rb_hash_new();
@@ -105,26 +118,24 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
  * FIXME: This function allocates a buffer each time it is called.
  *        Maybe we should use a one-time allocated buffer.  
  */
-VALUE gme_ruby_get_samples(VALUE self, VALUE samples)
+VALUE gme_ruby_get_samples(VALUE self)
 {
-    int        buffer_size = FIX2INT(samples); // buffer size equal to number of samples
     Music_Emu* emulator;
     int        c_samples;
     short*     c_buffer;
+    int        c_buffer_len;
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
-    // allocates memory for a buffer
-    c_buffer = (short*) malloc(buffer_size * sizeof(short));
+    // recovers a pointer to the internal buffer
+    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
+    c_buffer_len = NUM2LONG(rb_iv_get(self, "@internal_buffer_length"));
 
     // plays the file, returning the specified number of samples
-    handle_error(gme_play(emulator, buffer_size, c_buffer), eGenericException);
+    handle_error(gme_play(emulator, c_buffer_len, c_buffer), eGenericException);
 
     // creates a ruby string, containing the buffer content (generated samples)
-    VALUE ruby_string = rb_str_new((const char*)c_buffer, buffer_size * sizeof(short));
-
-    // releases the allocated memory
-    free(c_buffer);
+    VALUE ruby_string = rb_str_new((const char*)c_buffer, c_buffer_len * sizeof(short));
 
     // returns the played samples
     return ruby_string;
