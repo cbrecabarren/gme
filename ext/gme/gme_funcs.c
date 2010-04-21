@@ -25,15 +25,28 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     short* buffer;
     int    buffer_length;
 
+    // options hash
+    VALUE options;
+
     // use the first (mandatory) argument, as path to file
     VALUE string = StringValue(argv[0]);
     c_path = RSTRING_PTR(string);
 
-    // use the second argument, if present, as sample rate
-    if(argc >= 2) {
-        c_sample_rate = FIX2INT(argv[1]);
+    // use the second argument, if present, as the options hash
+    if(argc >= 2 && (TYPE(options) == T_HASH)){
+        options = argv[1];
     }
     else {
+        options = rb_hash_new();
+    }
+
+    // set sample rate
+    VALUE sample_rate = rb_hash_aref(options, ID2SYM(rb_intern("sample_rate")));
+    if(!NIL_P(sample_rate)){
+        c_sample_rate = FIX2INT(sample_rate);
+    }
+    else {
+        // default value
         c_sample_rate = 44100;
     }
 
