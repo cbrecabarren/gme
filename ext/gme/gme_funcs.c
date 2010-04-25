@@ -97,6 +97,9 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     int track_count = gme_track_count(emulator);
     rb_iv_set(new_instance, "@track_count", INT2FIX(track_count));
 
+    // no track has been started
+    rb_iv_set(new_instance, "@track_started", Qfalse);
+
     // returns the new instance of GME::Emulator
     return new_instance;
 }
@@ -131,6 +134,9 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 
     // starts the track
     handle_error(gme_start_track(emulator, c_track), eGenericException);
+    
+    // a track has been started...
+    rb_iv_set(self, "@track_started", Qtrue);
 
     // returns the track number started
     return INT2FIX(c_track);
@@ -192,6 +198,9 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     // starts track 0
     handle_error(gme_start_track(emulator, track), eGenericException);
 
+    // track 0 has been started
+    rb_iv_set(self, "@track_started", Qtrue);
+
     // gets the play length of the track from the info hash
     VALUE info_hash = rb_iv_get(self, "@info");
     int play_length = FIX2INT(rb_hash_aref(info_hash, ID2SYM(rb_intern("play_length"))));
@@ -207,6 +216,19 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     free(buffer);
 
     return Qnil;
+}
+
+/*
+ * Returns true if a track has been started
+ * and false in other cases.
+ */
+VALUE gme_ruby_track_started(VALUE self)
+{
+    VALUE track_started = rb_iv_get(self, "@track_started");
+
+    if(RTEST(track_started)) return Qtrue;
+    
+    return Qfalse;
 }
 
 /*
