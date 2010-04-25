@@ -7,3 +7,4 @@ a.out
 pkg/
 ext/gme/Makefile
 ext/gme/mkmf.log
+ext/gme/build/
