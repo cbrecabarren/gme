@@ -6,6 +6,7 @@
 extern VALUE cEmulator;
 extern VALUE eGenericException;
 extern VALUE eInvalidFile;
+extern VALUE eTrackNotStarted;
 
 void gme_ruby_emu_free(void* pointer);
 
@@ -153,6 +154,9 @@ VALUE gme_ruby_get_samples(VALUE self)
     int        c_samples;
     short*     c_buffer;
     int        c_buffer_len;
+
+    VALUE track_started = rb_iv_get(self, "@track_started");
+    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you must start a track first");
 
     Data_Get_Struct(self, Music_Emu, emulator);
 

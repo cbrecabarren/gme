@@ -8,13 +8,17 @@ VALUE cEmulator;
 
 VALUE eGenericException;
 VALUE eInvalidFile;
+VALUE eTrackNotStarted;
 
 void Init_gme_ext()
 {
     mGME = rb_define_module("GME");
+
     rb_require("gme/exceptions");
     eGenericException = rb_define_class_under(mGME, "GenericException", rb_eException);
     eInvalidFile = rb_define_class_under(mGME, "InvalidFile", eGenericException);
+    eTrackNotStarted = rb_define_class_under(mGME, "TrackNotStarted", eGenericException);
+
     cEmulator = rb_define_class_under(mGME, "Emulator", rb_cObject);
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("info")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("track_count")));
