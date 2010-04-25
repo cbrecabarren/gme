@@ -37,4 +37,5 @@ void Init_gme_ext()
     rb_define_method(cEmulator, "track_started?", gme_ruby_track_started, 0);
     rb_define_method(cEmulator, "tell", gme_ruby_tell, 0);
     rb_define_method(cEmulator, "track_ended?", gme_ruby_track_ended, 0);
+    rb_define_method(cEmulator, "ignore_silence", gme_ruby_ignore_silence, 1);
 }

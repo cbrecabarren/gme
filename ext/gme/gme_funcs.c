@@ -274,6 +274,24 @@ VALUE gme_ruby_track_ended(VALUE self)
 }
 
 /*
+ * sets whether or not to disable automatic end of track detection
+ * and skipping at the beginning
+ */
+VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore)
+{
+    Music_Emu* emulator;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // if the parameter 'ignore' is true, then ignore the automatic 
+    // handling of silences
+    if(RTEST(ignore)) gme_ignore_silence(emulator, 1);
+    else gme_ignore_silence(emulator, 0);
+
+    return Qnil;
+}
+
+/*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
 void gme_ruby_emu_free(void* pointer)
