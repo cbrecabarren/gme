@@ -236,6 +236,22 @@ VALUE gme_ruby_track_started(VALUE self)
 }
 
 /*
+ * Returns the number of milliseconds played since the start of the track
+ */
+VALUE gme_ruby_tell(VALUE self)
+{
+    Music_Emu* emulator;
+    int milliseconds;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // gets number of millisecons played
+    milliseconds = gme_tell(emulator);
+
+    return INT2FIX(milliseconds);
+}
+
+/*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
 void gme_ruby_emu_free(void* pointer)

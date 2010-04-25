@@ -35,4 +35,5 @@ void Init_gme_ext()
     rb_define_method(cEmulator, "get_samples", gme_ruby_get_samples, 0);
     rb_define_method(cEmulator, "play_to_file", gme_ruby_play_to_file, 1);
     rb_define_method(cEmulator, "track_started?", gme_ruby_track_started, 0);
+    rb_define_method(cEmulator, "tell", gme_ruby_tell, 0);
 }
