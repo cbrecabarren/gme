@@ -11,5 +11,6 @@ VALUE gme_ruby_get_samples(VALUE self);
 VALUE gme_ruby_play_to_file(VALUE self, VALUE file);
 VALUE gme_ruby_track_started(VALUE self);
 VALUE gme_ruby_tell(VALUE self);
+VALUE gme_ruby_track_ended(VALUE self);
 
 #endif

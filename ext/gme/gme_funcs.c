@@ -251,6 +251,28 @@ VALUE gme_ruby_tell(VALUE self)
     return INT2FIX(milliseconds);
 }
 
+
+/*
+ * Returns true if the track has ended
+ * and false in other cases
+ */
+VALUE gme_ruby_track_ended(VALUE self)
+{
+    Music_Emu* emulator;
+
+    // throws an exception if a track hasn't been started
+    VALUE track_started = gme_ruby_track_started(self);
+    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you have to start a track first");
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // checks if the track has ended
+    int track_ended = gme_track_ended(emulator);
+    if(track_ended) return Qtrue;
+
+    return Qfalse;    
+}
+
 /*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
