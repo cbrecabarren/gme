@@ -144,9 +144,7 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 }
 
 /*
- * Plays the specified number of samples
- * FIXME: This function allocates a buffer each time it is called.
- *        Maybe we should use a one-time allocated buffer.  
+ * Plays some samples, and returns them as an array
  */
 VALUE gme_ruby_get_samples(VALUE self)
 {
@@ -186,11 +184,17 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     Music_Emu* emulator;
     int        track       = 0;    // plays track 0 (TODO?)
 
+    // throws an exception if the file passed is not valid
+    // FIXME: currently it *requires* an object of class File
+    if(NIL_P(file) || TYPE(file) != T_FILE) {
+        rb_raise(eGenericException, "the file is not valid.");
+    }
+
     // allocates memory for the buffer
     buffer = (short*) malloc(buffer_size * sizeof(short));
 
     Data_Get_Struct(self, Music_Emu, emulator);
-
+    
     // TODO: fix for ruby-1.9 (fptr->stdio_file)
     stdio_file = RFILE(file)->fptr->f;
 
