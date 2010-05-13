@@ -296,6 +296,20 @@ VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore)
 }
 
 /*
+ * set the time in milliseconds to start fading the track
+ */
+VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds)
+{
+    Music_Emu* emulator;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    gme_set_fade(emulator, FIX2INT(milliseconds));
+
+    return Qnil;
+}
+
+/*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
 void gme_ruby_emu_free(void* pointer)
