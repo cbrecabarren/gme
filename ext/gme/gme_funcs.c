@@ -313,6 +313,83 @@ VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds)
 }
 
 /*
+ * plays the started track to the specified file.
+ * optionally, one can indicate the number of samples to be played
+ * (given that the buffer allocated previuosly is long enough)
+ */
+VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
+{
+    Music_Emu* emulator;
+    int        c_number_of_samples;
+    VALUE      options;         // options hash
+    VALUE      file;
+    FILE*      stdio_file;
+    short*     c_buffer;
+    int        c_buffer_len;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    file = argv[0];
+
+    // throws an exception if the file passed is not valid
+    // FIXME: currently it *requires* an object of class File
+    if(NIL_P(file) || TYPE(file) != T_FILE) {
+        rb_raise(eGenericException, "the file is not valid.");
+    }
+    
+    // TODO: fix for ruby-1.9 (fptr->stdio_file)
+    stdio_file = RFILE(file)->fptr->f;
+
+    // if the stdio pointer couldn't be accesed, exit the program
+    if(stdio_file == NULL) {
+        rb_fatal("Couldn't access stdio FILE pointer");
+    }
+
+    // if no track has been started, raise an exception
+    VALUE track_started = rb_iv_get(self, "@track_started");
+    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you must start a track first");
+
+    // use the second argument, if present, as the options hash
+    VALUE temp;
+    if(argc >= 2){
+        temp = rb_check_convert_type(argv[1], T_HASH, "Hash", "to_hash");
+        if(!NIL_P(temp)) options = temp;
+        else options = rb_hash_new();
+    }
+    else {
+        options = rb_hash_new();
+    }
+   
+    // determine the maximum number of samples to play given the buffer size
+    // (recall that buffer was allocated as an array of short)
+    // TODO: move this calculation to the 'open' method
+    int max_samples = FIX2INT(rb_iv_get(self, "@internal_buffer_length"));
+
+    // sets the number of samples to play
+    VALUE samples = rb_hash_aref(options, ID2SYM(rb_intern("samples")));
+    if(!NIL_P(samples) && FIX2INT(samples) > 0 && FIX2INT(samples) <= max_samples) {
+        c_number_of_samples = FIX2INT(samples);
+    }
+    else {
+        // default, the maximum number of samples permitted by the allocated buffer
+        c_number_of_samples = max_samples;
+    }
+
+    // recovers a pointer to the internal buffer
+    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
+
+    // plays the file, getting the specified number of samples
+    handle_error(gme_play(emulator, c_number_of_samples, c_buffer), eGenericException);
+
+    // writes the samples to the file
+    write_samples(stdio_file, c_number_of_samples, c_buffer);
+    fflush(stdio_file);
+
+    // returns the number of samples
+    return INT2FIX(c_number_of_samples);
+}
+
+/*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
 void gme_ruby_emu_free(void* pointer)
