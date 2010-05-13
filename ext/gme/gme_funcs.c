@@ -390,6 +390,46 @@ VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
 }
 
 /*
+ * inserts the specified milliseconds of silence in a file
+ */
+VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds)
+{
+    Music_Emu* emulator;
+    FILE*      stdio_file;
+    int        samples_to_write;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // throws an exception if the file passed is not valid
+    // FIXME: currently it *requires* an object of class File
+    if(NIL_P(file) || TYPE(file) != T_FILE) {
+        rb_raise(eGenericException, "the file is not valid.");
+    }
+    
+    // TODO: fix for ruby-1.9 (fptr->stdio_file)
+    stdio_file = RFILE(file)->fptr->f;
+
+    // if the stdio pointer couldn't be accesed, exit the program
+    if(stdio_file == NULL) {
+        rb_fatal("Couldn't access stdio FILE pointer");
+    }
+
+    // gets the original sample rate specified for the emulator
+    int sample_rate = FIX2INT(rb_iv_get(self, "@sample_rate"));
+    samples_to_write = sample_rate * (FIX2INT(milliseconds) / 1000);
+
+    // writes a number of 0's as silence
+    // (4 in the next calculation because samples are 2 bytes and there are 2 channels)
+    int i;
+    for(i=0; i <(samples_to_write * 4); i++) {
+        fputc(0, stdio_file);
+    }
+    fflush(stdio_file);
+
+    return Qnil;
+}
+
+/*
  * free function to the GME::Emulator wrapper for Music_Emu
  */
 void gme_ruby_emu_free(void* pointer)
