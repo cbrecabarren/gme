@@ -22,6 +22,7 @@ void Init_gme_ext()
     cEmulator = rb_define_class_under(mGME, "Emulator", rb_cObject);
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("info")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("track_count")));
+    rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("sample_rate")));
 
     // for debugging
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("internal_buffer")));

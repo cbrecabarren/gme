@@ -78,6 +78,9 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     rb_iv_set(new_instance, "@internal_buffer", LONG2NUM((long)buffer));
     rb_iv_set(new_instance, "@internal_buffer_length", INT2NUM(buffer_length));
 
+    // saves the sample rate value for future reference
+    rb_iv_set(new_instance, "@sample_rate", INT2FIX(c_sample_rate));
+
     // Fills the info hash
     VALUE info_hash = rb_hash_new();
     rb_hash_aset(info_hash, ID2SYM(rb_intern("play_length")), INT2FIX(info->play_length));
