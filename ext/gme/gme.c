@@ -22,13 +22,14 @@ void Init_gme_ext()
     cEmulator = rb_define_class_under(mGME, "Emulator", rb_cObject);
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("info")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("track_count")));
+    rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("sample_rate")));
 
     // for debugging
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("internal_buffer")));
     rb_funcall(cEmulator, rb_intern("attr_reader"), 1, ID2SYM(rb_intern("internal_buffer_length")));
     // ---
 
-    /* rb_define_alloc_func(cEmulator, gme_alloc); */
+    // FIXME: open and play should have 1 mandatory parameter and the rest are optional (i.e.: -2 as parameter count)
     rb_define_singleton_method(cEmulator, "open", gme_ruby_open, -1);
     rb_define_method(cEmulator, "close", gme_ruby_close, 0);
     rb_define_method(cEmulator, "start_track", gme_ruby_start_track, -1);
@@ -38,4 +39,7 @@ void Init_gme_ext()
     rb_define_method(cEmulator, "tell", gme_ruby_tell, 0);
     rb_define_method(cEmulator, "track_ended?", gme_ruby_track_ended, 0);
     rb_define_method(cEmulator, "ignore_silence", gme_ruby_ignore_silence, 1);
+    rb_define_method(cEmulator, "set_fade", gme_ruby_set_fade, 1);
+    rb_define_method(cEmulator, "play", gme_ruby_play, -1);
+    rb_define_method(cEmulator, "play_silence", gme_ruby_play_silence, 2);
 }

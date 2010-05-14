@@ -78,6 +78,9 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     rb_iv_set(new_instance, "@internal_buffer", LONG2NUM((long)buffer));
     rb_iv_set(new_instance, "@internal_buffer_length", INT2NUM(buffer_length));
 
+    // saves the sample rate value for future reference
+    rb_iv_set(new_instance, "@sample_rate", INT2FIX(c_sample_rate));
+
     // Fills the info hash
     VALUE info_hash = rb_hash_new();
     rb_hash_aset(info_hash, ID2SYM(rb_intern("play_length")), INT2FIX(info->play_length));
@@ -305,6 +308,137 @@ VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore)
     // handling of silences
     if(RTEST(ignore)) gme_ignore_silence(emulator, 1);
     else gme_ignore_silence(emulator, 0);
+
+    return Qnil;
+}
+
+/*
+ * set the time in milliseconds to start fading the track
+ */
+VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds)
+{
+    Music_Emu* emulator;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    gme_set_fade(emulator, FIX2INT(milliseconds));
+
+    return Qnil;
+}
+
+/*
+ * plays the started track to the specified file.
+ * optionally, one can indicate the number of samples to be played
+ * (given that the buffer allocated previuosly is long enough)
+ */
+VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
+{
+    Music_Emu* emulator;
+    int        c_number_of_samples;
+    VALUE      options;         // options hash
+    VALUE      file;
+    FILE*      stdio_file;
+    short*     c_buffer;
+    int        c_buffer_len;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    file = argv[0];
+
+    // throws an exception if the file passed is not valid
+    // FIXME: currently it *requires* an object of class File
+    if(NIL_P(file) || TYPE(file) != T_FILE) {
+        rb_raise(eGenericException, "the file is not valid.");
+    }
+    
+    // TODO: fix for ruby-1.9 (fptr->stdio_file)
+    stdio_file = RFILE(file)->fptr->f;
+
+    // if the stdio pointer couldn't be accesed, exit the program
+    if(stdio_file == NULL) {
+        rb_fatal("Couldn't access stdio FILE pointer");
+    }
+
+    // if no track has been started, raise an exception
+    VALUE track_started = rb_iv_get(self, "@track_started");
+    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you must start a track first");
+
+    // use the second argument, if present, as the options hash
+    VALUE temp;
+    if(argc >= 2){
+        temp = rb_check_convert_type(argv[1], T_HASH, "Hash", "to_hash");
+        if(!NIL_P(temp)) options = temp;
+        else options = rb_hash_new();
+    }
+    else {
+        options = rb_hash_new();
+    }
+   
+    // determine the maximum number of samples to play given the buffer size
+    // (recall that buffer was allocated as an array of short)
+    // TODO: move this calculation to the 'open' method
+    int max_samples = FIX2INT(rb_iv_get(self, "@internal_buffer_length"));
+
+    // sets the number of samples to play
+    VALUE samples = rb_hash_aref(options, ID2SYM(rb_intern("samples")));
+    if(!NIL_P(samples) && FIX2INT(samples) > 0 && FIX2INT(samples) <= max_samples) {
+        c_number_of_samples = FIX2INT(samples);
+    }
+    else {
+        // default, the maximum number of samples permitted by the allocated buffer
+        c_number_of_samples = max_samples;
+    }
+
+    // recovers a pointer to the internal buffer
+    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
+
+    // plays the file, getting the specified number of samples
+    handle_error(gme_play(emulator, c_number_of_samples, c_buffer), eGenericException);
+
+    // writes the samples to the file
+    write_samples(stdio_file, c_number_of_samples, c_buffer);
+    fflush(stdio_file);
+
+    // returns the number of samples
+    return INT2FIX(c_number_of_samples);
+}
+
+/*
+ * inserts the specified milliseconds of silence in a file
+ */
+VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds)
+{
+    Music_Emu* emulator;
+    FILE*      stdio_file;
+    int        samples_to_write;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // throws an exception if the file passed is not valid
+    // FIXME: currently it *requires* an object of class File
+    if(NIL_P(file) || TYPE(file) != T_FILE) {
+        rb_raise(eGenericException, "the file is not valid.");
+    }
+    
+    // TODO: fix for ruby-1.9 (fptr->stdio_file)
+    stdio_file = RFILE(file)->fptr->f;
+
+    // if the stdio pointer couldn't be accesed, exit the program
+    if(stdio_file == NULL) {
+        rb_fatal("Couldn't access stdio FILE pointer");
+    }
+
+    // gets the original sample rate specified for the emulator
+    int sample_rate = FIX2INT(rb_iv_get(self, "@sample_rate"));
+    samples_to_write = sample_rate * (FIX2INT(milliseconds) / 1000);
+
+    // writes a number of 0's as silence
+    // (4 in the next calculation because samples are 2 bytes and there are 2 channels)
+    int i;
+    for(i=0; i <(samples_to_write * 4); i++) {
+        fputc(0, stdio_file);
+    }
+    fflush(stdio_file);
 
     return Qnil;
 }
