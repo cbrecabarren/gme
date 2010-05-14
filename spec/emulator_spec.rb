@@ -18,21 +18,8 @@ describe Emulator, "when first created" do
     @song.track_count.should == 1
   end
 
-  it "should respond to the message 'info' and return a non-empty container" do 
-    @song.info.should_not be_empty
-  end
-
-  it "should correctly return the metadata of track 0 in a hash" do 
-    @song.info[:game].should == "Super Castlevania 4"
-    @song.info[:song].should == "Stage Clear"
-    @song.info[:length].should == 4000
-    @song.info[:copyright].should == "1991 Konami"
-    @song.info[:author].should == "Masanori Adachi, Taro Kudou"
-    @song.info[:play_length].should == 4000
-    @song.info[:comment].should == ""
-    @song.info[:dumper].should == "Datschge"
-    @song.info[:system].should == "Super Nintendo"
-    @song.info[:loop_length].should == -1
+  it "should return nil when asked for info" do 
+    @song.info.should be_nil
   end
 
   it "should indicate that no track has been started" do 
@@ -120,7 +107,26 @@ describe Emulator, "when first created" do
       @song.tell.should == 0
     end
 
-    # TODO: get_samples, open with options, etc.
+    it "should not return nil when asked for the info" do
+      @song.info.should_not be_nil
+    end
     
+    it "should correctly return the metadata of the started track in a hash" do
+      @song.info[:game].should == "Super Castlevania 4"
+      @song.info[:song].should == "Stage Clear"
+      @song.info[:length].should == 4000
+      @song.info[:copyright].should == "1991 Konami"
+      @song.info[:author].should == "Masanori Adachi, Taro Kudou"
+      @song.info[:play_length].should == 4000
+      @song.info[:comment].should == ""
+      @song.info[:dumper].should == "Datschge"
+      @song.info[:system].should == "Super Nintendo"
+      @song.info[:loop_length].should == -1
+    end
+
+    # TODO: complete examples for the methods:
+    # get_samples, set_fade, play_silence, play, close, tell, ignore_silence
+    # TODO: add examples for the open method with options
+    # :sample_rate, :buffer_length
   end
 end

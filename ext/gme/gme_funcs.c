@@ -19,8 +19,6 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     Music_Emu*  emulator;
     int         c_sample_rate;
     char*       c_path;
-    int         track = 0; // uses track 0 for getting info (FIXME)
-    gme_info_t* info;
 
     // internal buffer
     short* buffer;
@@ -66,8 +64,6 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // opens the specified file
     handle_error(gme_open_file(c_path, &emulator, c_sample_rate), eInvalidFile);
-    // and gets the info on the track
-    handle_error(gme_track_info(emulator, &info, track), eGenericException);
 
     // creates a new instance of GME::Emulator, as a wrapper around Music_Emu
     VALUE new_instance = Data_Wrap_Struct(cEmulator, 0, gme_ruby_emu_free, emulator);
@@ -80,22 +76,6 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // saves the sample rate value for future reference
     rb_iv_set(new_instance, "@sample_rate", INT2FIX(c_sample_rate));
-
-    // Fills the info hash
-    VALUE info_hash = rb_hash_new();
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("play_length")), INT2FIX(info->play_length));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("length")), INT2FIX(info->length));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("intro_length")), INT2FIX(info->intro_length));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("loop_length")), INT2FIX(info->loop_length));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("system")), rb_str_new2(info->system));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("game")), rb_str_new2(info->game));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("song")), rb_str_new2(info->song));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("author")), rb_str_new2(info->author));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("copyright")), rb_str_new2(info->copyright));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("comment")), rb_str_new2(info->comment));
-    rb_hash_aset(info_hash, ID2SYM(rb_intern("dumper")), rb_str_new2(info->dumper));
-    rb_iv_set(new_instance, "@info", info_hash);
-    gme_free_info(info);
 
     // sets the track count
     int track_count = gme_track_count(emulator);
@@ -136,8 +116,9 @@ VALUE gme_ruby_close(VALUE self)
  */
 VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 {
-    Music_Emu* emulator;
-    int        c_track;
+    Music_Emu*  emulator;
+    int         c_track;
+    gme_info_t* info;
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
@@ -149,6 +130,25 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
         // default value
         c_track = 0;
     }
+
+    // gets the info on the track
+    handle_error(gme_track_info(emulator, &info, c_track), eGenericException);
+
+    // Fills the info hash
+    VALUE info_hash = rb_hash_new();
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("play_length")), INT2FIX(info->play_length));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("length")), INT2FIX(info->length));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("intro_length")), INT2FIX(info->intro_length));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("loop_length")), INT2FIX(info->loop_length));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("system")), rb_str_new2(info->system));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("game")), rb_str_new2(info->game));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("song")), rb_str_new2(info->song));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("author")), rb_str_new2(info->author));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("copyright")), rb_str_new2(info->copyright));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("comment")), rb_str_new2(info->comment));
+    rb_hash_aset(info_hash, ID2SYM(rb_intern("dumper")), rb_str_new2(info->dumper));
+    rb_iv_set(self, "@info", info_hash);
+    gme_free_info(info);
 
     // starts the track
     handle_error(gme_start_track(emulator, c_track), eGenericException);
@@ -199,7 +199,10 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     short*     buffer;
     FILE*      stdio_file;
     Music_Emu* emulator;
-    int        track       = 0;    // plays track 0 (TODO?)
+    
+    // plays track 0
+    // TODO: receive the track to play as an argument
+    int track = 0;
 
     // throws an exception if the file passed is not valid
     // FIXME: currently it *requires* an object of class File
@@ -221,7 +224,7 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     }
 
     // starts track 0
-    handle_error(gme_start_track(emulator, track), eGenericException);
+    rb_funcall(self, rb_intern("start_track"), 1, INT2FIX(0));
 
     // track 0 has been started
     rb_iv_set(self, "@track_started", Qtrue);
