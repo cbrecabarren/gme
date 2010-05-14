@@ -1,25 +1,46 @@
-= GME: Game Music Emulator for Ruby
+= GME: Game Music Emu for Ruby
 
-This gem allows the use of the gme library (http://code.google.com/p/game-music-emu)
-by Blargg (http://www.fly.net/~ant/libs/audio.html) in Ruby programs.
+This gem allows the use of the {gme library}[http://code.google.com/p/game-music-emu]
+by {Blargg}[http://www.fly.net/~ant/libs/audio.html] in Ruby programs.
 
-At the moment, it implements just the basic functionality, and it's not suitable for production.
+Game Music Emu is a collection of video game music file emulators that support various formats and systems.
+
+At the moment, this gem implements just the basic functionality, and it's not suitable for production.
+
+== Installation
+Using Rubygems:
+
+   gem install gme
 
 == Example usage:
 
-This gem only outputs raw pcm data, and doesn't include options for handling multi track files.
+Note: This gem only outputs raw pcm data (16 bit samples, stereo).
 
+   require 'rubygems'
    require 'gme'
    
-   song = GME::Emulator.open('/path/to/file.ext', options = {}) # opens a music file and sets up an GME::Emulator object
+   song = GME::Emulator.open('/path/to/file.ext', options = {}) # opens a music file and sets up a GME::Emulator object
    # configuration options:
    # :sample_rate   - specifies the output sample rate
    # :buffer_length - specifies the internal buffer length to be used
 
-   puts song.info                     # prints the information about the first track
+   file = File.new('output.pcm', 'w') # opens a file for writing
 
-   song.play_to_file(file)            # plays the first track of the song to a file
+   song.start_track(1)                # starts the specified track (0 by default)
 
-   song.start_track(track_number)     # starts the specified track (0 by default)
-   song.get_samples                   # gets a number of samples
+   song.info                          # returns a hash with some information about the started track
+
+   song.play(file, :samples => 1024)  # writes the specified number of samples to a file
+
+   song.tell                          # returns the number of milliseconds played 
+                                      # since the beginning of the track
+
+   song.set_fade(2000)                # sets the number of milliseconds to start fading
+                                      # the track since the beginning of the track
+
+   song.play_silence(file, 2000)      # writes the specified milliseconds of silence to a file
    
+   song.play_to_file(file)            # completely plays the first track to a file
+
+   file.close                         # closes the ouput file
+   song.close                         # release the memory allocated for the emulator

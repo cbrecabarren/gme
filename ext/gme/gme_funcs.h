@@ -13,5 +13,8 @@ VALUE gme_ruby_track_started(VALUE self);
 VALUE gme_ruby_tell(VALUE self);
 VALUE gme_ruby_track_ended(VALUE self);
 VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore);
+VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds);
+VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self);
+VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds);
 
 #endif
