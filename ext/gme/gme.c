@@ -1,6 +1,7 @@
 #include <ruby.h>
-#include "gme_funcs.h"
 #include "util.h"
+#include "gme_helpers.h"
+#include "gme_funcs.h"
 
 // classes and modules representations
 VALUE mGME;

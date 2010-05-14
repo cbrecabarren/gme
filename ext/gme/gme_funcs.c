@@ -1,4 +1,5 @@
 #include "gme_funcs.h"
+#include "gme_helpers.h"
 #include "util.h"
 
 #include <rubyio.h>
@@ -8,17 +9,16 @@ extern VALUE eGenericException;
 extern VALUE eInvalidFile;
 extern VALUE eTrackNotStarted;
 
-void gme_ruby_emu_free(void* pointer);
-
 /*
- * Opens a new input file
- * Returns a new instance of GME::Emulator
+ * Opens a new input file.
+ * Returns a new instance of GME::Emulator.
+ * Accepts options in a hash (2nd argument).
  */
 VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 {
-    Music_Emu*  emulator;
-    int         c_sample_rate;
-    char*       c_path;
+    Music_Emu* emulator;
+    int        c_sample_rate;
+    char*      c_path;
 
     // internal buffer
     short* buffer;
@@ -42,7 +42,7 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
         options = rb_hash_new();
     }
 
-    // set sample rate
+    // set sample rate from options hash
     VALUE sample_rate = rb_hash_aref(options, ID2SYM(rb_intern("sample_rate")));
     if(!NIL_P(sample_rate)) {
         c_sample_rate = FIX2INT(sample_rate);
@@ -52,7 +52,7 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
         c_sample_rate = 44100;
     }
 
-    // set buffer length
+    // set buffer length from options hash
     VALUE buffer_len = rb_hash_aref(options, ID2SYM(rb_intern("buffer_length")));
     if(!NIL_P(buffer_len)) {
         buffer_length = FIX2INT(buffer_len);
@@ -70,7 +70,7 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 
     // allocates memory for the internal buffer
     buffer = (short*) malloc(sizeof(short) * buffer_length);
-    // and saves a reference for later use (hack?)
+    // and saves a reference for later use (HACK?)
     rb_iv_set(new_instance, "@internal_buffer", LONG2NUM((long)buffer));
     rb_iv_set(new_instance, "@internal_buffer_length", INT2NUM(buffer_length));
 
@@ -89,10 +89,10 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 }
 
 /*
- * releases all the resources allocated in Emulator#open
- * the object is unusable after this call
+ * Releases all the resources allocated in Emulator#open.
+ * The object is unusable after this call.
  * TODO: mark valid and invalid objects and raise exceptions if appropiate
- *       instead of simply failing or generating a segfault
+ *       instead of simply failing or generating a segfault.
  */
 VALUE gme_ruby_close(VALUE self)
 {
@@ -111,8 +111,9 @@ VALUE gme_ruby_close(VALUE self)
 }
 
 /*
- * starts a track
- * if not specified, uses track number 0
+ * Starts a track.
+ * If a track is not specified, uses track number 0.
+ * Returns the number of the track started.
  */
 VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 {
@@ -170,14 +171,11 @@ VALUE gme_ruby_get_samples(VALUE self)
     short*     c_buffer;
     int        c_buffer_len;
 
-    VALUE track_started = rb_iv_get(self, "@track_started");
-    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you must start a track first");
+    raise_if_track_has_not_started(self);
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
-    // recovers a pointer to the internal buffer
-    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
-    c_buffer_len = NUM2INT(rb_iv_get(self, "@internal_buffer_length"));
+    get_internal_buffer(self, &c_buffer, &c_buffer_len);
 
     // plays the file, returning the specified number of samples
     handle_error(gme_play(emulator, c_buffer_len, c_buffer), eGenericException);
@@ -190,8 +188,8 @@ VALUE gme_ruby_get_samples(VALUE self)
 }
 
 /*
- * Plays the track 0 of the input file
- * and writes in the specified (ruby) output file
+ * Plays the track 0 of the input file,
+ * and writes in the specified (Ruby) output file.
  */
 VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
 {
@@ -204,30 +202,17 @@ VALUE gme_ruby_play_to_file(VALUE self, VALUE file)
     // TODO: receive the track to play as an argument
     int track = 0;
 
-    // throws an exception if the file passed is not valid
-    // FIXME: currently it *requires* an object of class File
-    if(NIL_P(file) || TYPE(file) != T_FILE) {
-        rb_raise(eGenericException, "the file is not valid.");
-    }
+    raise_if_invalid_file(file);
+
+    stdio_file = get_stdio_pointer(file);
 
     // allocates memory for the buffer
     buffer = (short*) malloc(buffer_size * sizeof(short));
 
     Data_Get_Struct(self, Music_Emu, emulator);
     
-    // TODO: fix for ruby-1.9 (fptr->stdio_file)
-    stdio_file = RFILE(file)->fptr->f;
-
-    // if the stdio pointer couldn't be accesed, exit the program
-    if(stdio_file == NULL) {
-        rb_fatal("Couldn't access stdio FILE pointer");
-    }
-
-    // starts track 0
-    rb_funcall(self, rb_intern("start_track"), 1, INT2FIX(0));
-
-    // track 0 has been started
-    rb_iv_set(self, "@track_started", Qtrue);
+    // starts track
+    rb_funcall(self, rb_intern("start_track"), 1, INT2FIX(track));
 
     // gets the play length of the track from the info hash
     VALUE info_hash = rb_iv_get(self, "@info");
@@ -260,7 +245,7 @@ VALUE gme_ruby_track_started(VALUE self)
 }
 
 /*
- * Returns the number of milliseconds played since the start of the track
+ * Returns the number of milliseconds played since the start of the track.
  */
 VALUE gme_ruby_tell(VALUE self)
 {
@@ -275,7 +260,6 @@ VALUE gme_ruby_tell(VALUE self)
     return INT2FIX(milliseconds);
 }
 
-
 /*
  * Returns true if the track has ended
  * and false in other cases
@@ -284,9 +268,7 @@ VALUE gme_ruby_track_ended(VALUE self)
 {
     Music_Emu* emulator;
 
-    // throws an exception if a track hasn't been started
-    VALUE track_started = gme_ruby_track_started(self);
-    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you have to start a track first");
+    raise_if_track_has_not_started(self);
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
@@ -298,8 +280,8 @@ VALUE gme_ruby_track_ended(VALUE self)
 }
 
 /*
- * sets whether or not to disable automatic end of track detection
- * and skipping at the beginning
+ * Sets whether or not to disable automatic end of track detection
+ * and skipping at the beginning.
  */
 VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore)
 {
@@ -316,7 +298,7 @@ VALUE gme_ruby_ignore_silence(VALUE self, VALUE ignore)
 }
 
 /*
- * set the time in milliseconds to start fading the track
+ * Sets the time in milliseconds to start fading the track.
  */
 VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds)
 {
@@ -330,9 +312,9 @@ VALUE gme_ruby_set_fade(VALUE self, VALUE milliseconds)
 }
 
 /*
- * plays the started track to the specified file.
- * optionally, one can indicate the number of samples to be played
- * (given that the buffer allocated previuosly is long enough)
+ * Plays the started track to the specified file.
+ * Optionally, one can indicate the number of samples to be played
+ * (given that the buffer allocated previuosly is long enough).
  */
 VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
 {
@@ -346,25 +328,14 @@ VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
+    // file as the first argument
     file = argv[0];
 
-    // throws an exception if the file passed is not valid
-    // FIXME: currently it *requires* an object of class File
-    if(NIL_P(file) || TYPE(file) != T_FILE) {
-        rb_raise(eGenericException, "the file is not valid.");
-    }
-    
-    // TODO: fix for ruby-1.9 (fptr->stdio_file)
-    stdio_file = RFILE(file)->fptr->f;
+    raise_if_invalid_file(file);
 
-    // if the stdio pointer couldn't be accesed, exit the program
-    if(stdio_file == NULL) {
-        rb_fatal("Couldn't access stdio FILE pointer");
-    }
+    stdio_file = get_stdio_pointer(file);
 
-    // if no track has been started, raise an exception
-    VALUE track_started = rb_iv_get(self, "@track_started");
-    if(!RTEST(track_started)) rb_raise(eTrackNotStarted, "you must start a track first");
+    raise_if_track_has_not_started(self);
 
     // use the second argument, if present, as the options hash
     VALUE temp;
@@ -377,10 +348,11 @@ VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
         options = rb_hash_new();
     }
    
+    get_internal_buffer(self, &c_buffer, &c_buffer_len);
+
     // determine the maximum number of samples to play given the buffer size
     // (recall that buffer was allocated as an array of short)
-    // TODO: move this calculation to the 'open' method
-    int max_samples = FIX2INT(rb_iv_get(self, "@internal_buffer_length"));
+    int max_samples = c_buffer_len;
 
     // sets the number of samples to play
     VALUE samples = rb_hash_aref(options, ID2SYM(rb_intern("samples")));
@@ -391,9 +363,6 @@ VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
         // default, the maximum number of samples permitted by the allocated buffer
         c_number_of_samples = max_samples;
     }
-
-    // recovers a pointer to the internal buffer
-    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
 
     // plays the file, getting the specified number of samples
     handle_error(gme_play(emulator, c_number_of_samples, c_buffer), eGenericException);
@@ -407,7 +376,7 @@ VALUE gme_ruby_play(int argc, VALUE* argv, VALUE self)
 }
 
 /*
- * inserts the specified milliseconds of silence in a file
+ * Inserts the specified milliseconds of silence in a file.
  */
 VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds)
 {
@@ -417,19 +386,9 @@ VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds)
 
     Data_Get_Struct(self, Music_Emu, emulator);
 
-    // throws an exception if the file passed is not valid
-    // FIXME: currently it *requires* an object of class File
-    if(NIL_P(file) || TYPE(file) != T_FILE) {
-        rb_raise(eGenericException, "the file is not valid.");
-    }
-    
-    // TODO: fix for ruby-1.9 (fptr->stdio_file)
-    stdio_file = RFILE(file)->fptr->f;
+    raise_if_invalid_file(file);
 
-    // if the stdio pointer couldn't be accesed, exit the program
-    if(stdio_file == NULL) {
-        rb_fatal("Couldn't access stdio FILE pointer");
-    }
+    stdio_file = get_stdio_pointer(file);
 
     // gets the original sample rate specified for the emulator
     int sample_rate = FIX2INT(rb_iv_get(self, "@sample_rate"));
@@ -444,12 +403,4 @@ VALUE gme_ruby_play_silence(VALUE self, VALUE file, VALUE milliseconds)
     fflush(stdio_file);
 
     return Qnil;
-}
-
-/*
- * free function to the GME::Emulator wrapper for Music_Emu
- */
-void gme_ruby_emu_free(void* pointer)
-{
-    if(pointer != NULL) gme_delete(pointer);
 }
