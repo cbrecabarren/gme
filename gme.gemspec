@@ -33,6 +33,8 @@ Gem::Specification.new do |s|
      "ext/gme/gme.c",
      "ext/gme/gme_funcs.c",
      "ext/gme/gme_funcs.h",
+     "ext/gme/gme_helpers.c",
+     "ext/gme/gme_helpers.h",
      "ext/gme/util.c",
      "ext/gme/util.h",
      "lib/gme.rb",
