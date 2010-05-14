@@ -5,12 +5,12 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gme}
-  s.version = "0.0.13"
+  s.version = "0.1.0"
   s.platform = %q{x86-linux}
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Carlos Beltr\303\241n-Recabarren"]
-  s.date = %q{2010-04-30}
+  s.date = %q{2010-05-14}
   s.description = %q{libgme interface for Ruby}
   s.email = %q{cbrecabarren@gmail.com}
   s.extensions = ["ext/gme/extconf.rb", "ext/gme/extconf.rb"]
@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
      "ext/gme/build/gme.o",
      "ext/gme/build/gme_ext.so",
      "ext/gme/build/gme_funcs.o",
+     "ext/gme/build/gme_helpers.o",
      "ext/gme/build/mkmf.log",
      "ext/gme/build/util.o",
      "ext/gme/extconf.rb",
@@ -46,8 +47,8 @@ Gem::Specification.new do |s|
   s.rubygems_version = %q{1.3.6}
   s.summary = %q{gme for Ruby}
   s.test_files = [
-    "spec/emulator_spec.rb",
-     "spec/spec_helper.rb"
+    "spec/spec_helper.rb",
+     "spec/emulator_spec.rb"
   ]
 
   if s.respond_to? :specification_version then
