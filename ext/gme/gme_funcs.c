@@ -73,7 +73,7 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
     VALUE new_instance = Data_Wrap_Struct(cEmulator, 0, gme_ruby_emu_free, emulator);
 
     // allocates memory for the internal buffer
-    buffer = ALLOC_N(short, buffer_length);
+    buffer = (short*) malloc(sizeof(short) * buffer_length);
     // and saves a reference for later use (hack?)
     rb_iv_set(new_instance, "@internal_buffer", LONG2NUM((long)buffer));
     rb_iv_set(new_instance, "@internal_buffer_length", INT2NUM(buffer_length));
@@ -106,11 +106,25 @@ VALUE gme_ruby_open(int argc, VALUE* argv, VALUE self)
 }
 
 /*
- * is this function really needed?
+ * releases all the resources allocated in Emulator#open
+ * the object is unusable after this call
+ * TODO: mark valid and invalid objects and raise exceptions if appropiate
+ *       instead of simply failing or generating a segfault
  */
 VALUE gme_ruby_close(VALUE self)
 {
-    return Qnil;    
+    Music_Emu* emulator;
+    short*     c_buffer;
+
+    Data_Get_Struct(self, Music_Emu, emulator);
+
+    // recovers a pointer to the internal buffer
+    c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
+
+    // releases the memory
+    if(c_buffer != NULL) free(c_buffer);
+
+    return Qnil;
 }
 
 /*
