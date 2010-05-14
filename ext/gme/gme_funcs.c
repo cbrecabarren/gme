@@ -104,8 +104,14 @@ VALUE gme_ruby_close(VALUE self)
     // recovers a pointer to the internal buffer
     c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
 
-    // releases the memory
+    // releases the memory for the buffer
     if(c_buffer != NULL) free(c_buffer);
+
+    // release the memory for the emulator struct
+    // TODO: Do we really need this? why the gc isn't releasing this memory?
+    //       Apparently, uncommenting this line causes a double free error.
+    //       So, the GC actually calls it, but still there are memory leaks...
+    // gme_ruby_emu_free(emulator);
 
     return Qnil;
 }
