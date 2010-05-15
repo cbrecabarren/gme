@@ -2,8 +2,6 @@
 #include "gme_helpers.h"
 #include "util.h"
 
-#include <rubyio.h>
-
 extern VALUE cEmulator;
 extern VALUE eGenericException;
 extern VALUE eInvalidFile;
@@ -173,7 +171,6 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 VALUE gme_ruby_get_samples(VALUE self)
 {
     Music_Emu* emulator;
-    int        c_samples;
     short*     c_buffer;
     int        c_buffer_len;
 
