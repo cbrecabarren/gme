@@ -2,8 +2,6 @@
 #include "gme_helpers.h"
 #include "util.h"
 
-#include <rubyio.h>
-
 extern VALUE cEmulator;
 extern VALUE eGenericException;
 extern VALUE eInvalidFile;
@@ -104,8 +102,14 @@ VALUE gme_ruby_close(VALUE self)
     // recovers a pointer to the internal buffer
     c_buffer = (short*) NUM2LONG(rb_iv_get(self, "@internal_buffer"));
 
-    // releases the memory
+    // releases the memory for the buffer
     if(c_buffer != NULL) free(c_buffer);
+
+    // release the memory for the emulator struct
+    // TODO: Do we really need this? why the gc isn't releasing this memory?
+    //       Apparently, uncommenting this line causes a double free error.
+    //       So, the GC actually calls it, but still there are memory leaks...
+    // gme_ruby_emu_free(emulator);
 
     return Qnil;
 }
@@ -167,7 +171,6 @@ VALUE gme_ruby_start_track(int argc, VALUE* argv, VALUE self)
 VALUE gme_ruby_get_samples(VALUE self)
 {
     Music_Emu* emulator;
-    int        c_samples;
     short*     c_buffer;
     int        c_buffer_len;
 

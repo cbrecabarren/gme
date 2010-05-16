@@ -52,8 +52,12 @@ FILE* get_stdio_pointer(VALUE file)
 {
     FILE* stdio_pointer = NULL;
 
-    // TODO: fix for ruby-1.9 (fptr->stdio_file)
+    // recover the file pointer depending on the ruby version
+#if HAVE_RUBY_IO_H
+    stdio_pointer = rb_io_stdio_file(RFILE(file)->fptr);
+#else
     stdio_pointer = RFILE(file)->fptr->f;
+#endif
 
     return stdio_pointer;
 }

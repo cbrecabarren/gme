@@ -9,6 +9,10 @@ describe Emulator, "when first created" do
     path = File.expand_path(File.dirname(__FILE__) + '/fixtures/sample.spc')
     @song = Emulator.open(path)
   end
+
+  after(:each) do 
+    @song.close
+  end
   
   it "should not be nil" do 
     @song.should_not be_nil
@@ -62,7 +66,6 @@ describe Emulator, "when first created" do
       
       it "should play track 0 and write the samples to the specified file" do 
         lambda { @song.play_to_file(@file) }.should_not raise_exception
-        @song.close
         File.size("temp.out").should == 706560
         # TODO: check correctness of the generated file
       end

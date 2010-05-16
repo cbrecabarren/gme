@@ -2,7 +2,13 @@
 #define _GME_HELPERS_H
 
 #include <ruby.h>
+#ifdef HAVE_RUBY_IO_H
+#include <ruby/io.h>
+#else
 #include <rubyio.h>
+#endif
+
+#include <gme/gme.h>
 
 extern VALUE eTrackNotStarted;
 extern VALUE eGenericException;

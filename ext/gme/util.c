@@ -3,7 +3,7 @@
 void handle_error(const char* string, VALUE exception)
 {
     if(string) {
-        rb_raise(exception, string);
+        rb_raise(exception, "%s", string);
     }
 }
 
