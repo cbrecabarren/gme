@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gme}
-  s.version = "0.1.0"
+  s.version = "0.1.1"
   s.platform = %q{x86-linux}
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
